@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>rusticize — NEMESIS ENGINE</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+    <style>
+        :root {
+            --bg: #0d1117;
+            --bg-secondary: #161b22;
+            --bg-tertiary: #21262d;
+            --border: #30363d;
+            --text: #c9d1d9;
+            --text-secondary: #8b949e;
+            --accent: #58a6ff;
+            --danger: #f85149;
+            --success: #3fb950;
+            --warn: #d29922;
+            --font-mono: "JetBrains Mono", "Fira Code", Monaco, monospace;
+            --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: var(--font-sans);
+            font-size: 14px;
+            height: 100vh;
+            overflow: hidden;
+        }
+        .app {
+            display: grid;
+            grid-template-columns: 260px 1fr;
+            grid-template-rows: 48px 1fr 200px;
+            height: 100vh;
+        }
+        .header {
+            grid-column: 1 / -1;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+        }
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .brand-icon {
+            width: 26px; height: 26px;
+            background: linear-gradient(135deg, var(--accent), #a371f7);
+            border-radius: 5px;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 800; font-size: 11px; color: #fff;
+        }
+        .brand-title { font-weight: 700; font-size: 15px; letter-spacing: 0.3px; }
+        .brand-sub { font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--accent); font-weight: 600; }
+        .sidebar {
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border);
+            overflow-y: auto;
+            padding: 12px;
+        }
+        .sidebar h3 {
+            font-size: 11px; text-transform: uppercase; letter-spacing: 0.8px;
+            color: var(--text-secondary); margin-bottom: 10px; padding: 0 8px;
+        }
+        .lesson-item {
+            padding: 8px 10px; border-radius: 6px; cursor: pointer;
+            margin-bottom: 2px; transition: background 0.15s;
+            display: flex; align-items: center; gap: 8px;
+            font-size: 13px;
+        }
+        .lesson-item:hover { background: var(--bg-tertiary); }
+        .lesson-item.active { background: var(--bg-tertiary); border-left: 2px solid var(--accent); }
+        .lesson-item.completed { color: var(--success); }
+        .lesson-item.completed::before {
+            content: "✓"; font-weight: bold; color: var(--success); font-size: 11px;
+        }
+        .lesson-item::before {
+            content: "○"; color: var(--text-secondary); font-size: 11px;
+        }
+        .main {
+            display: flex; flex-direction: column;
+            background: var(--bg);
+        }
+        .lesson-header {
+            padding: 16px 20px; border-bottom: 1px solid var(--border);
+            background: var(--bg-secondary);
+        }
+        .lesson-header h2 { font-size: 18px; margin-bottom: 6px; }
+        .lesson-header p { color: var(--text-secondary); font-size: 13px; line-height: 1.5; }
+        .lesson-header .level {
+            display: inline-block; padding: 2px 8px; border-radius: 10px;
+            font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
+            background: var(--bg-tertiary); margin-top: 8px;
+        }
+        .editor-container {
+            flex: 1; display: flex; flex-direction: column;
+            border-bottom: 1px solid var(--border);
+        }
+        .editor-toolbar {
+            display: flex; align-items: center; gap: 8px;
+            padding: 6px 12px; background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+        }
+        .btn {
+            padding: 5px 14px; border-radius: 5px; border: 1px solid var(--border);
+            background: var(--bg-tertiary); color: var(--text); font-family: var(--font-sans);
+            font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.15s;
+        }
+        .btn:hover { background: var(--border); }
+        .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+        .btn.primary:hover { background: #79b8ff; }
+        .btn.success { background: var(--success); border-color: var(--success); color: #fff; }
+        #editor { flex: 1; }
+        .terminal {
+            background: var(--bg-secondary); padding: 12px;
+            font-family: var(--font-mono); font-size: 12px;
+            overflow-y: auto; white-space: pre-wrap;
+        }
+        .terminal .stdout { color: var(--text); }
+        .terminal .stderr { color: var(--danger); }
+        .terminal .success { color: var(--success); }
+        .terminal .error { color: var(--danger); }
+        .terminal .info { color: var(--text-secondary); }
+        .progress-bar {
+            position: fixed; bottom: 0; left: 260px; right: 0; height: 3px;
+            background: var(--bg-tertiary);
+        }
+        .progress-fill {
+            height: 100%; background: linear-gradient(90deg, var(--accent), #a371f7);
+            transition: width 0.3s ease;
+        }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: var(--bg-secondary); }
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <div class="header">
+            <div class="brand">
+                <div class="brand-icon">Rz</div>
+                <div>
+                    <div class="brand-title">rusticize</div>
+                    <div class="brand-sub">NEMESIS ENGINE Rust Playground</div>
+                </div>
+            </div>
+            <div style="font-size: 12px; color: var(--text-secondary);">
+                v0.1.0 — Learn Rust. Break Things.
+            </div>
+        </div>
+        <div class="sidebar">
+            <h3>Curriculum</h3>
+            <div id="lesson-list"></div>
+        </div>
+        <div class="main">
+            <div class="lesson-header" id="lesson-header">
+                <h2>Welcome to rusticize</h2>
+                <p>Select a lesson from the sidebar to begin your Rust journey.</p>
+            </div>
+            <div class="editor-container">
+                <div class="editor-toolbar">
+                    <button class="btn primary" onclick="compile()">▶ Run</button>
+                    <button class="btn" onclick="resetCode()">↺ Reset</button>
+                    <span style="margin-left: auto; color: var(--text-secondary); font-size: 11px;" id="status"></span>
+                </div>
+                <div id="editor"></div>
+            </div>
+            <div class="terminal" id="terminal">
+                <span class="info">Click "Run" to compile and execute your code.</span>
+            </div>
+        </div>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" id="progress" style="width: 0%"></div></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs/loader.min.js"></script>
+    <script>
+        let editor;
+        let currentLesson = null;
+        let lessons = [];
+        let progress = {};
+
+        require.config({ paths: { vs: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs' }});
+        require(['vs/editor/editor.main'], () => {
+            editor = monaco.editor.create(document.getElementById('editor'), {
+                value: '// Select a lesson to begin',
+                language: 'rust',
+                theme: 'vs-dark',
+                fontSize: 14,
+                fontFamily: '"JetBrains Mono", "Fira Code", Monaco, monospace',
+                minimap: { enabled: false },
+                automaticLayout: true,
+                scrollBeyondLastLine: false,
+                renderLineHighlight: 'all',
+                padding: { top: 10 },
+            });
+        });
+
+        async function loadLessons() {
+            const res = await fetch('/api/lessons');
+            lessons = await res.json();
+            renderLessons();
+        }
+
+        async function loadProgress() {
+            const res = await fetch('/api/progress');
+            const data = await res.json();
+            progress = {};
+            for (const p of data) {
+                progress[p.lesson_id] = p;
+            }
+            renderLessons();
+            updateProgressBar();
+        }
+
+        function renderLessons() {
+            const container = document.getElementById('lesson-list');
+            container.innerHTML = lessons.map(l => {
+                const isCompleted = progress[l.id]?.completed;
+                const isActive = currentLesson?.id === l.id;
+                return `<div class="lesson-item ${isActive ? 'active' : ''} ${isCompleted ? 'completed' : ''}" onclick="selectLesson('${l.id}')">${l.title}</div>`;
+            }).join('');
+        }
+
+        async function selectLesson(id) {
+            const res = await fetch(`/api/lessons/${id}`);
+            const lesson = await res.json();
+            currentLesson = lesson;
+
+            document.getElementById('lesson-header').innerHTML = `
+                <h2>${lesson.title}</h2>
+                <p>${lesson.description}</p>
+                <span class="level">${lesson.level}</span>
+            `;
+
+            const saved = progress[id]?.last_code;
+            editor.setValue(saved || lesson.starter_code);
+            renderLessons();
+        }
+
+        function resetCode() {
+            if (currentLesson) {
+                editor.setValue(currentLesson.starter_code);
+            }
+        }
+
+        async function compile() {
+            if (!editor) return;
+            const code = editor.getValue();
+            const terminal = document.getElementById('terminal');
+            const status = document.getElementById('status');
+
+            status.textContent = 'Compiling...';
+            terminal.innerHTML = '<span class="info">Compiling...</span>';
+
+            try {
+                const res = await fetch('/api/compile', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ code }),
+                });
+                const result = await res.json();
+
+                let html = '';
+                if (result.stderr) {
+                    html += `<span class="stderr">${escapeHtml(result.stderr)}</span>\n`;
+                }
+                if (result.stdout) {
+                    html += `<span class="stdout">${escapeHtml(result.stdout)}</span>`;
+                }
+                if (!result.stderr && !result.stdout) {
+                    html += `<span class="info">Program finished with no output (${result.duration_ms}ms)</span>`;
+                }
+                terminal.innerHTML = html;
+                status.textContent = result.success ? `Success (${result.duration_ms}ms)` : `Failed (${result.duration_ms}ms)`;
+                status.style.color = result.success ? 'var(--success)' : 'var(--danger)';
+
+                // Auto-validate if in a lesson
+                if (currentLesson) {
+                    await validateLesson(code);
+                }
+            } catch (e) {
+                terminal.innerHTML = `<span class="error">Network error: ${escapeHtml(e.message)}</span>`;
+                status.textContent = 'Error';
+            }
+        }
+
+        async function validateLesson(code) {
+            try {
+                const res = await fetch(`/api/lessons/${currentLesson.id}/validate`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ code }),
+                });
+                const data = await res.json();
+                if (data.passed) {
+                    document.getElementById('terminal').innerHTML += '\n<span class="success">✓ Lesson passed!</span>';
+                    await loadProgress();
+                }
+            } catch (e) {}
+        }
+
+        function updateProgressBar() {
+            const completed = Object.values(progress).filter(p => p.completed).length;
+            const pct = lessons.length > 0 ? (completed / lessons.length) * 100 : 0;
+            document.getElementById('progress').style.width = pct + '%';
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Init
+        loadLessons().then(loadProgress);
+    </script>
+</body>
+</html>
