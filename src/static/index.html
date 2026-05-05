@@ -4,19 +4,21 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>rusticize — NEMESIS ENGINE</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
     <style>
         :root {
             --bg: #0d1117;
             --bg-secondary: #161b22;
             --bg-tertiary: #21262d;
+            --bg-elevated: #1c2128;
             --border: #30363d;
             --text: #c9d1d9;
             --text-secondary: #8b949e;
             --accent: #58a6ff;
+            --accent-dim: #1f6feb;
             --danger: #f85149;
             --success: #3fb950;
             --warn: #d29922;
+            --hint: #a371f7;
             --font-mono: "JetBrains Mono", "Fira Code", Monaco, monospace;
             --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
         }
@@ -31,8 +33,8 @@
         }
         .app {
             display: grid;
-            grid-template-columns: 260px 1fr;
-            grid-template-rows: 48px 1fr 200px;
+            grid-template-columns: 240px 1fr;
+            grid-template-rows: 48px 1fr;
             height: 100vh;
         }
         .header {
@@ -43,6 +45,7 @@
             padding: 0 20px;
             background: var(--bg-secondary);
             border-bottom: 1px solid var(--border);
+            z-index: 10;
         }
         .brand {
             display: flex;
@@ -84,28 +87,128 @@
             content: "○"; color: var(--text-secondary); font-size: 11px;
         }
         .main {
-            display: flex; flex-direction: column;
+            display: grid;
+            grid-template-columns: 420px 1fr;
+            overflow: hidden;
+        }
+        .learn-panel {
             background: var(--bg);
+            border-right: 1px solid var(--border);
+            overflow-y: auto;
+            padding: 20px;
         }
-        .lesson-header {
-            padding: 16px 20px; border-bottom: 1px solid var(--border);
-            background: var(--bg-secondary);
+        .learn-panel h2 {
+            font-size: 18px; margin-bottom: 4px;
         }
-        .lesson-header h2 { font-size: 18px; margin-bottom: 6px; }
-        .lesson-header p { color: var(--text-secondary); font-size: 13px; line-height: 1.5; }
-        .lesson-header .level {
+        .learn-panel .level {
             display: inline-block; padding: 2px 8px; border-radius: 10px;
             font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
-            background: var(--bg-tertiary); margin-top: 8px;
+            background: var(--bg-tertiary); margin-bottom: 16px;
         }
-        .editor-container {
-            flex: 1; display: flex; flex-direction: column;
-            border-bottom: 1px solid var(--border);
+        .learn-panel .description {
+            color: var(--text-secondary); font-size: 13px; line-height: 1.6;
+            margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid var(--border);
+        }
+        .section {
+            margin-bottom: 20px;
+        }
+        .section-title {
+            font-size: 11px; text-transform: uppercase; letter-spacing: 0.8px;
+            color: var(--text-secondary); margin-bottom: 10px; font-weight: 700;
+        }
+        .objectives {
+            list-style: none;
+        }
+        .objectives li {
+            padding: 4px 0; padding-left: 20px; position: relative;
+            font-size: 13px; color: var(--text-secondary); line-height: 1.5;
+        }
+        .objectives li::before {
+            content: "→"; position: absolute; left: 0; color: var(--accent);
+        }
+        .explanation {
+            font-size: 13px; line-height: 1.7;
+        }
+        .explanation h3 {
+            font-size: 14px; color: var(--text);
+            margin: 16px 0 8px 0;
+        }
+        .explanation h3:first-child { margin-top: 0; }
+        .explanation p {
+            color: var(--text-secondary); margin-bottom: 10px;
+        }
+        .explanation pre {
+            background: var(--bg-secondary); border: 1px solid var(--border);
+            border-radius: 6px; padding: 12px;
+            font-family: var(--font-mono); font-size: 12px;
+            overflow-x: auto; margin: 10px 0;
+        }
+        .explanation code {
+            background: var(--bg-secondary); padding: 1px 5px; border-radius: 4px;
+            font-family: var(--font-mono); font-size: 12px; color: var(--accent);
+        }
+        .explanation pre code {
+            background: none; padding: 0; color: var(--text);
+        }
+        .explanation ul, .explanation ol {
+            margin: 8px 0 12px 20px; color: var(--text-secondary);
+        }
+        .explanation li { margin: 4px 0; }
+        .hint-box {
+            background: rgba(163, 113, 247, 0.08);
+            border: 1px solid rgba(163, 113, 247, 0.25);
+            border-radius: 8px; padding: 12px;
+            margin-bottom: 8px; cursor: pointer;
+            transition: all 0.2s;
+        }
+        .hint-box:hover { border-color: var(--hint); }
+        .hint-box.revealed {
+            background: rgba(163, 113, 247, 0.12);
+            border-color: var(--hint);
+        }
+        .hint-number {
+            font-size: 10px; font-weight: 700; color: var(--hint);
+            text-transform: uppercase; letter-spacing: 0.5px;
+        }
+        .hint-text {
+            font-size: 13px; color: var(--text-secondary); margin-top: 4px;
+            display: none; line-height: 1.5;
+        }
+        .hint-box.revealed .hint-text { display: block; }
+        .hint-placeholder {
+            font-size: 12px; color: var(--text-secondary); font-style: italic;
+        }
+        .hint-box.revealed .hint-placeholder { display: none; }
+        .mistake-card {
+            background: var(--bg-secondary); border: 1px solid var(--border);
+            border-radius: 8px; padding: 14px; margin-bottom: 10px;
+        }
+        .mistake-title {
+            font-size: 13px; font-weight: 600; color: var(--danger);
+            margin-bottom: 6px;
+        }
+        .mistake-why {
+            font-size: 12px; color: var(--text-secondary); line-height: 1.5;
+            margin-bottom: 8px;
+        }
+        .mistake-fix {
+            font-size: 12px; color: var(--success); line-height: 1.5;
+            padding: 8px; background: rgba(63, 185, 80, 0.08);
+            border-radius: 6px; border-left: 3px solid var(--success);
+        }
+        .mistake-fix-label {
+            font-weight: 700; font-size: 10px; text-transform: uppercase;
+            letter-spacing: 0.5px; margin-bottom: 2px; display: block;
+        }
+        .editor-area {
+            display: flex; flex-direction: column;
+            overflow: hidden;
         }
         .editor-toolbar {
             display: flex; align-items: center; gap: 8px;
-            padding: 6px 12px; background: var(--bg-secondary);
+            padding: 8px 12px; background: var(--bg-secondary);
             border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
         }
         .btn {
             padding: 5px 14px; border-radius: 5px; border: 1px solid var(--border);
@@ -116,11 +219,13 @@
         .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
         .btn.primary:hover { background: #79b8ff; }
         .btn.success { background: var(--success); border-color: var(--success); color: #fff; }
-        #editor { flex: 1; }
+        #editor { flex: 1; min-height: 0; }
         .terminal {
             background: var(--bg-secondary); padding: 12px;
             font-family: var(--font-mono); font-size: 12px;
             overflow-y: auto; white-space: pre-wrap;
+            border-top: 1px solid var(--border);
+            height: 180px; flex-shrink: 0;
         }
         .terminal .stdout { color: var(--text); }
         .terminal .stderr { color: var(--danger); }
@@ -128,12 +233,21 @@
         .terminal .error { color: var(--danger); }
         .terminal .info { color: var(--text-secondary); }
         .progress-bar {
-            position: fixed; bottom: 0; left: 260px; right: 0; height: 3px;
-            background: var(--bg-tertiary);
+            position: fixed; bottom: 0; left: 240px; right: 0; height: 3px;
+            background: var(--bg-tertiary); z-index: 20;
         }
         .progress-fill {
             height: 100%; background: linear-gradient(90deg, var(--accent), #a371f7);
             transition: width 0.3s ease;
+        }
+        .welcome {
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            height: 100%; text-align: center; padding: 40px;
+        }
+        .welcome h1 { font-size: 28px; margin-bottom: 12px; }
+        .welcome p { color: var(--text-secondary); font-size: 15px; line-height: 1.6; max-width: 500px; }
+        .welcome .start-btn {
+            margin-top: 24px; padding: 10px 24px; font-size: 14px;
         }
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: var(--bg-secondary); }
@@ -151,28 +265,18 @@
                 </div>
             </div>
             <div style="font-size: 12px; color: var(--text-secondary);">
-                v0.1.0 — Learn Rust. Break Things.
+                v0.2.0 — Learn Rust. Break Things.
             </div>
         </div>
         <div class="sidebar">
             <h3>Curriculum</h3>
             <div id="lesson-list"></div>
         </div>
-        <div class="main">
-            <div class="lesson-header" id="lesson-header">
-                <h2>Welcome to rusticize</h2>
-                <p>Select a lesson from the sidebar to begin your Rust journey.</p>
-            </div>
-            <div class="editor-container">
-                <div class="editor-toolbar">
-                    <button class="btn primary" onclick="compile()">▶ Run</button>
-                    <button class="btn" onclick="resetCode()">↺ Reset</button>
-                    <span style="margin-left: auto; color: var(--text-secondary); font-size: 11px;" id="status"></span>
-                </div>
-                <div id="editor"></div>
-            </div>
-            <div class="terminal" id="terminal">
-                <span class="info">Click "Run" to compile and execute your code.</span>
+        <div class="main" id="main-area">
+            <div class="welcome" id="welcome">
+                <h1>Welcome to rusticize</h1>
+                <p>A hands-on Rust learning platform with a built-in playground, progressive hints, and real explanations — not just exercises.</p>
+                <p style="margin-top: 12px; font-size: 13px;">Select a lesson from the sidebar to begin.</p>
             </div>
         </div>
     </div>
@@ -187,18 +291,7 @@
 
         require.config({ paths: { vs: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs' }});
         require(['vs/editor/editor.main'], () => {
-            editor = monaco.editor.create(document.getElementById('editor'), {
-                value: '// Select a lesson to begin',
-                language: 'rust',
-                theme: 'vs-dark',
-                fontSize: 14,
-                fontFamily: '"JetBrains Mono", "Fira Code", Monaco, monospace',
-                minimap: { enabled: false },
-                automaticLayout: true,
-                scrollBeyondLastLine: false,
-                renderLineHighlight: 'all',
-                padding: { top: 10 },
-            });
+            // editor created when lesson selected
         });
 
         async function loadLessons() {
@@ -232,19 +325,90 @@
             const lesson = await res.json();
             currentLesson = lesson;
 
-            document.getElementById('lesson-header').innerHTML = `
-                <h2>${lesson.title}</h2>
-                <p>${lesson.description}</p>
-                <span class="level">${lesson.level}</span>
+            const main = document.getElementById('main-area');
+            main.innerHTML = `
+                <div class="learn-panel" id="learn-panel">
+                    <h2>${escapeHtml(lesson.title)}</h2>
+                    <span class="level">${escapeHtml(lesson.level)}</span>
+                    <p class="description">${escapeHtml(lesson.description)}</p>
+
+                    <div class="section">
+                        <div class="section-title">Learning Objectives</div>
+                        <ul class="objectives">
+                            ${lesson.objectives.map(o => `<li>${escapeHtml(o)}</li>`).join('')}
+                        </ul>
+                    </div>
+
+                    <div class="section">
+                        <div class="section-title">Concepts</div>
+                        <div class="explanation">${lesson.explanation}</div>
+                    </div>
+
+                    <div class="section">
+                        <div class="section-title">Hints (${lesson.hints.length})</div>
+                        <div id="hints-container">
+                            ${lesson.hints.map((h, i) => `
+                                <div class="hint-box" onclick="toggleHint(this)">
+                                    <div class="hint-number">Hint ${i + 1}</div>
+                                    <div class="hint-placeholder">Click to reveal...</div>
+                                    <div class="hint-text">${escapeHtml(h)}</div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+
+                    <div class="section">
+                        <div class="section-title">Common Mistakes</div>
+                        ${lesson.common_mistakes.map(m => `
+                            <div class="mistake-card">
+                                <div class="mistake-title">${escapeHtml(m.mistake)}</div>
+                                <div class="mistake-why">${escapeHtml(m.why_it_happens)}</div>
+                                <div class="mistake-fix">
+                                    <span class="mistake-fix-label">How to fix</span>
+                                    ${escapeHtml(m.how_to_fix)}
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+                <div class="editor-area">
+                    <div class="editor-toolbar">
+                        <button class="btn primary" onclick="compile()">▶ Run</button>
+                        <button class="btn" onclick="resetCode()">↺ Reset</button>
+                        <span style="margin-left: auto; color: var(--text-secondary); font-size: 11px;" id="status"></span>
+                    </div>
+                    <div id="editor"></div>
+                    <div class="terminal" id="terminal">
+                        <span class="info">Click "Run" to compile and execute your code.</span>
+                    </div>
+                </div>
             `;
 
-            const saved = progress[id]?.last_code;
-            editor.setValue(saved || lesson.starter_code);
+            // Create editor
+            if (window.monaco) {
+                editor = monaco.editor.create(document.getElementById('editor'), {
+                    value: progress[id]?.last_code || lesson.starter_code,
+                    language: 'rust',
+                    theme: 'vs-dark',
+                    fontSize: 14,
+                    fontFamily: '"JetBrains Mono", "Fira Code", Monaco, monospace',
+                    minimap: { enabled: false },
+                    automaticLayout: true,
+                    scrollBeyondLastLine: false,
+                    renderLineHighlight: 'all',
+                    padding: { top: 10 },
+                });
+            }
+
             renderLessons();
         }
 
+        function toggleHint(el) {
+            el.classList.toggle('revealed');
+        }
+
         function resetCode() {
-            if (currentLesson) {
+            if (currentLesson && editor) {
                 editor.setValue(currentLesson.starter_code);
             }
         }
@@ -280,7 +444,6 @@
                 status.textContent = result.success ? `Success (${result.duration_ms}ms)` : `Failed (${result.duration_ms}ms)`;
                 status.style.color = result.success ? 'var(--success)' : 'var(--danger)';
 
-                // Auto-validate if in a lesson
                 if (currentLesson) {
                     await validateLesson(code);
                 }
@@ -317,7 +480,6 @@
             return div.innerHTML;
         }
 
-        // Init
         loadLessons().then(loadProgress);
     </script>
 </body>
