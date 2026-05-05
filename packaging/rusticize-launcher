@@ -1,0 +1,22 @@
+#!/bin/bash
+# rusticize launcher — starts server and opens browser
+
+URL="http://127.0.0.1:8765"
+BIN="/usr/bin/rusticize"
+
+# Check if already running
+if ! curl -s -o /dev/null --max-time 2 "$URL"; then
+    nohup "$BIN" >/dev/null 2>&1 &
+    sleep 2
+fi
+
+# Open browser
+if command -v xdg-open >/dev/null 2>&1; then
+    xdg-open "$URL"
+elif command -v firefox >/dev/null 2>&1; then
+    firefox "$URL"
+elif command -v chromium >/dev/null 2>&1; then
+    chromium "$URL"
+else
+    echo "rusticize running at $URL"
+fi

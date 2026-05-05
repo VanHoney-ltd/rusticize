@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=rusticize
+Comment=NEMESIS ENGINE Rust Learning Platform
+Exec=rusticize-launcher
+Icon=rusticize
+Type=Application
+Categories=Development;Education;
+Terminal=false
+StartupNotify=true
